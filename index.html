@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>KittyFile</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- TCSS minimal (style inline) -->
+  <style>
+    :root {
+      --bg: #05060a;
+      --bg-alt: #10121a;
+      --fg: #f5f5f7;
+      --accent: #4f8cff;
+      --accent-soft: rgba(79, 140, 255, 0.15);
+      --border: #262938;
+      --danger: #ff4f6a;
+      --radius: 8px;
+      --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font);
+      background: radial-gradient(circle at top, #15182a 0, #05060a 55%);
+      color: var(--fg);
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1100px;
+      margin: 16px;
+      background: rgba(5, 6, 10, 0.92);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .app-header {
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(90deg, #111320, #15182a);
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+    }
+    .dot.red { background: #ff5f57; }
+    .dot.yellow { background: #febc2e; }
+    .dot.green { background: #28c840; }
+
+    .title {
+      margin-left: 6px;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .app-body {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: 420px;
+    }
+
+    @media (max-width: 800px) {
+      .app-body {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+      }
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--border);
+      background: radial-gradient(circle at top left, #181b2c 0, #05060a 60%);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      opacity: 0.8;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: #0b0d14;
+      color: var(--fg);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s, border-color 0.15s, transform 0.05s;
+    }
+
+    .btn:hover {
+      background: #15182a;
+      border-color: var(--accent);
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: #6a9cff;
+    }
+
+    .btn-danger {
+      border-color: rgba(255, 79, 106, 0.6);
+      color: #ff9aad;
+    }
+
+    .file-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: rgba(8, 9, 16, 0.9);
+      overflow: hidden;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .file-item {
+      padding: 8px 10px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+      cursor: pointer;
+      background: transparent;
+      transition: background 0.12s;
+    }
+
+    .file-item:last-child {
+      border-bottom: none;
+    }
+
+    .file-item:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .file-item.active {
+      background: var(--accent-soft);
+      border-left: 2px solid var(--accent);
+      padding-left: 8px;
+    }
+
+    .file-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 150px;
+    }
+
+    .file-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .file-actions button {
+      border-radius: 999px;
+      border: none;
+      background: transparent;
+      color: #888ea8;
+      cursor: pointer;
+      padding: 2px 4px;
+      font-size: 11px;
+    }
+
+    .file-actions button:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .editor {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: radial-gradient(circle at top right, #181b2c 0, #05060a 60%);
+    }
+
+    .editor-top {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .editor-info {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .editor-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .editor-area {
+      flex: 1;
+      min-height: 260px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: #05060a;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .editor-textarea {
+      flex: 1;
+      width: 100%;
+      border: none;
+      outline: none;
+      resize: none;
+      padding: 10px;
+      font-family: "JetBrains Mono", "Fira Code", monospace;
+      font-size: 13px;
+      color: var(--fg);
+      background: transparent;
+    }
+
+    .status-bar {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      opacity: 0.7;
+      background: #05060a;
+    }
+
+    .hidden-input {
+      display: none;
+    }
+
+    .badge {
+      padding: 2px 6px;
+      border-radius: 999px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .badge-accent {
+      background: var(--accent-soft);
+      border-color: rgba(79, 140, 255, 0.6);
+      color: #c7d6ff;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div class="dot red"></div>
+        <div class="dot yellow"></div>
+        <div class="dot green"></div>
+      </div>
+      <div class="title">Lanceur & Éditeur .kty - KittyFile</div>
+      <div style="margin-left:auto;font-size:11px;opacity:0.7;display:flex;align-items:center;gap:6px;">
+        <span class="badge badge-accent">.kty</span>
+        <span>Écrit en HTML · JS · TCSS</span>
+      </div>
+    </header>
+
+    <div class="app-body">
+      <!-- Sidebar / Launcher -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <span>Projets .kty</span>
+          <button class="btn btn-primary" id="btn-new">Nouveau</button>
+        </div>
+
+        <ul class="file-list" id="file-list"></ul>
+
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
+          <button class="btn" id="btn-import">Importer .kty</button>
+          <button class="btn" id="btn-clear-all">Tout effacer</button>
+        </div>
+
+        <input type="file" accept=".kty,.txt" id="file-input" class="hidden-input" />
+      </aside>
+
+      <!-- Editor -->
+      <main class="editor">
+        <div class="editor-top">
+          <div class="editor-info">
+            <span id="current-file-name">Aucun fichier sélectionné</span>
+          </div>
+          <div class="editor-buttons">
+            <button class="btn btn-primary" id="btn-save">Enregistrer</button>
+            <button class="btn" id="btn-download">Exporter .kty</button>
+            <button class="btn" id="btn-run">Lancer</button>
+          </div>
+        </div>
+
+        <div class="editor-area">
+          <textarea
+            id="editor"
+            class="editor-textarea"
+            placeholder="// Écris ici le contenu de ton fichier .kty"
+          ></textarea>
+          <div class="status-bar">
+            <span id="status">Prêt.</span>
+            <span id="stats">0 lignes · 0 caractères</span>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // --- Stockage local simple pour les fichiers .kty ---
+    const STORAGE_KEY = "kty_files_v1";
+
+    function loadFiles() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        return JSON.parse(raw);
+      } catch (e) {
+        console.error(e);
+        return [];
+      }
+    }
+
+    function saveFiles(files) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
+    }
+
+    // --- État ---
+    let files = loadFiles();
+    let currentId = null;
+
+    // --- DOM ---
+    const fileListEl = document.getElementById("file-list");
+    const editorEl = document.getElementById("editor");
+    const statusEl = document.getElementById("status");
+    const statsEl = document.getElementById("stats");
+    const currentFileNameEl = document.getElementById("current-file-name");
+    const fileInputEl = document.getElementById("file-input");
+
+    const btnNew = document.getElementById("btn-new");
+    const btnSave = document.getElementById("btn-save");
+    const btnDownload = document.getElementById("btn-download");
+    const btnRun = document.getElementById("btn-run");
+    const btnImport = document.getElementById("btn-import");
+    const btnClearAll = document.getElementById("btn-clear-all");
+
+    // --- Helpers ---
+    function setStatus(msg) {
+      statusEl.textContent = msg;
+    }
+
+    function updateStats() {
+      const text = editorEl.value || "";
+      const lines = text.split(/\r\n|\r|\n/).length;
+      const chars = text.length;
+      statsEl.textContent = lines + " lignes · " + chars + " caractères";
+    }
+
+    function renderFileList() {
+      fileListEl.innerHTML = "";
+      if (!files.length) {
+        const li = document.createElement("li");
+        li.className = "file-item";
+        li.style.opacity = "0.6";
+        li.textContent = "Aucun fichier .kty enregistré";
+        fileListEl.appendChild(li);
+        return;
+      }
+
+      files.forEach((file) => {
+        const li = document.createElement("li");
+        li.className = "file-item" + (file.id === currentId ? " active" : "");
+        li.dataset.id = file.id;
+
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "file-name";
+        nameSpan.textContent = file.name;
+
+        const actions = document.createElement("div");
+        actions.className = "file-actions";
+
+        const renameBtn = document.createElement("button");
+        renameBtn.textContent = "✏️";
+        renameBtn.title = "Renommer";
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "🗑";
+        deleteBtn.title = "Supprimer";
+
+        actions.appendChild(renameBtn);
+        actions.appendChild(deleteBtn);
+
+        li.appendChild(nameSpan);
+        li.appendChild(actions);
+
+        // Sélection
+        li.addEventListener("click", (e) => {
+          // éviter que le clic sur les boutons déclenche l'ouverture
+          if (e.target === renameBtn || e.target === deleteBtn) return;
+          openFile(file.id);
+        });
+
+        // Renommer
+        renameBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const newName = prompt("Nouveau nom du fichier .kty :", file.name);
+          if (!newName) return;
+          file.name = newName.endsWith(".kty") ? newName : newName + ".kty";
+          saveFiles(files);
+          renderFileList();
+          if (file.id === currentId) {
+            currentFileNameEl.textContent = file.name;
+          }
+          setStatus("Fichier renommé.");
+        });
+
+        // Supprimer
+        deleteBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (!confirm("Supprimer ce fichier .kty ?")) return;
+          files = files.filter((f) => f.id !== file.id);
+          saveFiles(files);
+          if (currentId === file.id) {
+            currentId = null;
+            editorEl.value = "";
+            currentFileNameEl.textContent = "Aucun fichier sélectionné";
+            updateStats();
+          }
+          renderFileList();
+          setStatus("Fichier supprimé.");
+        });
+
+        fileListEl.appendChild(li);
+      });
+    }
+
+    function openFile(id) {
+      const file = files.find((f) => f.id === id);
+      if (!file) return;
+      currentId = id;
+      editorEl.value = file.content || "";
+      currentFileNameEl.textContent = file.name;
+      updateStats();
+      renderFileList();
+      setStatus("Fichier chargé.");
+    }
+
+    function createNewFile() {
+      const baseName = "nouveau.kty";
+      let name = baseName;
+      let i = 1;
+      while (files.some((f) => f.name === name)) {
+        name = "nouveau(" + i + ").kty";
+        i++;
+      }
+      const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      const file = {
+        id,
+        name,
+        content: "// Nouveau fichier .kty\n"
+      };
+      files.push(file);
+      saveFiles(files);
+      openFile(id);
+      renderFileList();
+      setStatus("Nouveau fichier créé.");
+    }
+
+    function saveCurrentFile() {
+      if (!currentId) {
+        // si aucun fichier, on en crée un automatiquement
+        createNewFile();
+        return;
+      }
+      const file = files.find((f) => f.id === currentId);
+      if (!file) return;
+      file.content = editorEl.value || "";
+      saveFiles(files);
+      setStatus("Enregistré localement.");
+    }
+
+    function downloadCurrentFile() {
+      if (!currentId) {
+        alert("Aucun fichier sélectionné.");
+        return;
+      }
+      const file = files.find((f) => f.id === currentId);
+      if (!file) return;
+
+      const blob = new Blob([file.content || ""], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = file.name || "fichier.kty";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setStatus("Fichier exporté.");
+    }
+
+    function importFileFromDisk(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target.result || "";
+        const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        const name = file.name.endsWith(".kty") ? file.name : file.name + ".kty";
+        const newFile = { id, name, content };
+        files.push(newFile);
+        saveFiles(files);
+        openFile(id);
+        renderFileList();
+        setStatus("Fichier importé.");
+      };
+      reader.readAsText(file, "utf-8");
+    }
+
+    function clearAllFiles() {
+      if (!confirm("Supprimer tous les fichiers .kty enregistrés ?")) return;
+      files = [];
+      saveFiles(files);
+      currentId = null;
+      editorEl.value = "";
+      currentFileNameEl.textContent = "Aucun fichier sélectionné";
+      updateStats();
+      renderFileList();
+      setStatus("Tous les fichiers ont été supprimés.");
+    }
+
+    function runCurrentFile() {
+      if (!currentId) {
+        alert("Aucun fichier sélectionné.");
+        return;
+      }
+      const file = files.find((f) => f.id === currentId);
+      if (!file) return;
+
+      // Ici, "Lancer" est symbolique : on affiche le contenu dans une modale simple.
+      // Tu peux adapter pour interpréter .kty comme tu veux (JSON, script, etc.).
+      const preview = window.open("", "_blank", "width=600,height=400");
+      if (!preview) {
+        alert("Impossible d'ouvrir la fenêtre de prévisualisation (popup bloqué ?).");
+        return;
+      }
+      preview.document.write(
+        "<pre style='font-family:monospace;white-space:pre-wrap;padding:10px;background:#05060a;color:#f5f5f7;'>" +
+          String(file.content).replace(/</g, "&lt;") +
+        "</pre>"
+      );
+      preview.document.title = "Prévisualisation " + file.name;
+      setStatus("Fichier lancé (prévisualisation).");
+    }
+
+    // --- Événements ---
+    editorEl.addEventListener("input", () => {
+      updateStats();
+    });
+
+    btnNew.addEventListener("click", () => {
+      createNewFile();
+    });
+
+    btnSave.addEventListener("click", () => {
+      saveCurrentFile();
+    });
+
+    btnDownload.addEventListener("click", () => {
+      downloadCurrentFile();
+    });
+
+    btnRun.addEventListener("click", () => {
+      runCurrentFile();
+    });
+
+    btnImport.addEventListener("click", () => {
+      fileInputEl.value = "";
+      fileInputEl.click();
+    });
+
+    fileInputEl.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      importFileFromDisk(file);
+    });
+
+    btnClearAll.addEventListener("click", () => {
+      clearAllFiles();
+    });
+
+    // --- Init ---
+    renderFileList();
+    updateStats();
+    setStatus("Prêt. Crée ou importe un fichier .kty.");
+  </script>
+</body>
+  </html>
+  
