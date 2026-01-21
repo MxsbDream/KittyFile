@@ -340,10 +340,10 @@
           <textarea
             id="editor"
             class="editor-textarea"
-            placeholder="// Écris ici le contenu de ton fichier .kty"
+            placeholder="Écris ici le contenu de ton fichier .kty"
           ></textarea>
           <div class="status-bar">
-            <span id="status">Prêt.</span>
+            <span id="status"></span>
             <span id="stats">0 lignes · 0 caractères</span>
           </div>
         </div>
@@ -491,7 +491,7 @@
     }
 
     function createNewFile() {
-      const baseName = "nouveau.kty";
+      const baseName = "KITTY.kty";
       let name = baseName;
       let i = 1;
       while (files.some((f) => f.name === name)) {
